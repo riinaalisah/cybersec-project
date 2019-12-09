@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
     <head>
-        <title>Sign up form</title>
+        <title>Event signup</title>
     </head>
     <body>
 
-        <h1>Sign up to the event using this form</h1>
+        <h1>Great, you are logged in! Now you can sign up to the event using this form</h1>
+        <p>Logged in user: <a th:if="${user} != null" th:text="${user.username}"></a></p>
 
         <form action="#" th:action="@{/form}" method="POST">
             <p><label for="name">Name</label>: <input type="text" name="name" id="name"/></p>
