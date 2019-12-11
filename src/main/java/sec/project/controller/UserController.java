@@ -1,23 +1,21 @@
 package sec.project.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import sec.project.domain.User;
+import sec.project.config.CustomUserDetailsService;
 import org.springframework.ui.Model;
-import sec.project.repository.UserRepository;
-import javax.persistence.EntityManager;
-import java.util.List;
-import java.util.ArrayList;
+
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class UserController {
 
   @Autowired
-  private UserRepository userRepository;
+  private CustomUserDetailsService userDetailsService;
 
   @RequestMapping(value = "/login", method = RequestMethod.GET)
   public String loadLoginForm() {
@@ -26,22 +24,18 @@ public class UserController {
 
   @RequestMapping(value = "/login", method = RequestMethod.POST)
   public String submitLoginForm(@RequestParam String username, @RequestParam String password, Model model, RedirectAttributes redirectAttributes) {
-    User user = userRepository.findByUsername(username);
-    if (user != null) {
-
-      List<User> users = userRepository.findAll();
-      for (int i = 0; i < users.size(); i++) {
-        System.out.println("PASSWORD: " + users.get(i).getPassword());
+    try {
+      UserDetails user = userDetailsService.loadUserByUsername(username);
+      if (user.getPassword().equals(password)) {
+        model.addAttribute("username", username);
+        return "form";
       }
-
-      model.addAttribute("user", user);
-      return "form";
-
-    } else {
+    } catch (Exception e) {
       redirectAttributes.addFlashAttribute("error", "Invalid credentials");
       return "redirect:/login";
     }
-    
+
+    return "redirect:/login";
   }
 
   @RequestMapping(value = "/register", method = RequestMethod.GET)
@@ -51,14 +45,13 @@ public class UserController {
 
   @RequestMapping(value = "/register", method = RequestMethod.POST)
   public String submitRegistrationForm(@RequestParam String username, @RequestParam String password, Model model, RedirectAttributes redirectAttributes) {
-    if (userRepository.findByUsername(username) == null) {
-      User newUser = new User(username, password, "user");
-      userRepository.save(newUser);
-      model.addAttribute("user", newUser);
-      return "login";
-    } else {
+    try {
+      UserDetails user = userDetailsService.loadUserByUsername(username);
       redirectAttributes.addFlashAttribute("error", "Username is already taken");
       return "redirect:/register";
+    } catch (Exception e) {
+      userDetailsService.saveNewUser(username, password);
+      return "login";
     }
   }
 }
